@@ -12,9 +12,10 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // On mount, get or create orgId and fetch historyy
+  // On mount, get or create orgId and fetch history first
   useEffect(() => {
     let orgId = localStorage.getItem("organizationId");
     if (!orgId) {
@@ -22,12 +23,13 @@ export default function Home() {
       localStorage.setItem("organizationId", orgId);
     }
     setOrganizationId(orgId);
-    // Fetch history
+    setHistoryLoading(true);
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask/history/${orgId}`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.history)) setMessages(data.history);
-      });
+      })
+      .finally(() => setHistoryLoading(false));
   }, []);
 
   useEffect(() => {
@@ -71,6 +73,14 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  if (historyLoading) {
+    return (
+      <div style={{ textAlign: "center", marginTop: 80, fontSize: 20 }}>
+        Loading chat history...
+      </div>
+    );
+  }
 
   return (
     <div
