@@ -23,7 +23,7 @@ export default function Home() {
     }
     setOrganizationId(orgId);
     // Fetch history
-    fetch(`http://localhost:8000/ask/history/${orgId}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask/history/${orgId}`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.history)) setMessages(data.history);
@@ -41,7 +41,7 @@ export default function Home() {
     setInput("");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/ask", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: input, organizationId }),
