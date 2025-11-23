@@ -1,65 +1,213 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useRef, useState } from "react";
+
+type Message = {
+  sender: "user" | "ai";
+  text: string;
+  timestamp?: number;
+};
 
 export default function Home() {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // On mount, get or create orgId and fetch historyy
+  useEffect(() => {
+    let orgId = localStorage.getItem("organizationId");
+    if (!orgId) {
+      orgId = "org-" + Math.random().toString(36).slice(2) + Date.now();
+      localStorage.setItem("organizationId", orgId);
+    }
+    setOrganizationId(orgId);
+    // Fetch history
+    fetch(`http://localhost:8000/ask/history/${orgId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.history)) setMessages(data.history);
+      });
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const handleSend = async () => {
+    if (!input.trim() || loading || !organizationId) return;
+    const userMsg = { sender: "user" as const, text: input };
+    setMessages((msgs) => [...msgs, userMsg]);
+    setInput("");
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:8000/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: input, organizationId }),
+      });
+      const data = await res.json();
+      if (Array.isArray(data.history)) {
+        setMessages(data.history);
+      } else {
+        setMessages((msgs) => [
+          ...msgs,
+          { sender: "ai", text: data.answer || JSON.stringify(data) },
+        ]);
+      }
+      if (data.organizationId && data.organizationId !== organizationId) {
+        setOrganizationId(data.organizationId);
+        localStorage.setItem("organizationId", data.organizationId);
+      }
+    } catch (e) {
+      setMessages((msgs) => [
+        ...msgs,
+        {
+          sender: "ai",
+          text: "Error: " + (e instanceof Error ? e.message : String(e)),
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div
+      style={{
+        maxWidth: 500,
+        margin: "40px auto",
+        padding: 0,
+        border: "1px solid #eee",
+        borderRadius: 10,
+        boxShadow: "0 2px 12px #0001",
+        display: "flex",
+        flexDirection: "column",
+        height: "80vh",
+        background: "#fff",
+      }}
+    >
+      <div
+        style={{
+          padding: 16,
+          borderBottom: "1px solid #eee",
+          background: "#f7f7f7",
+          borderTopLeftRadius: 10,
+          borderTopRightRadius: 10,
+          fontWeight: 600,
+          fontSize: 20,
+          textAlign: "center",
+        }}
+      >
+        Chatbot
+      </div>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          background: "#f4f6fa",
+        }}
+      >
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              justifyContent: msg.sender === "user" ? "flex-end" : "flex-start",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: "70%",
+                padding: "10px 16px",
+                borderRadius: 18,
+                background: msg.sender === "user" ? "#0070f3" : "#e5e7eb",
+                color: msg.sender === "user" ? "#fff" : "#222",
+                fontSize: 16,
+                boxShadow:
+                  msg.sender === "user"
+                    ? "0 2px 8px #0070f322"
+                    : "0 2px 8px #0001",
+                marginLeft: msg.sender === "user" ? 40 : 0,
+                marginRight: msg.sender === "ai" ? 40 : 0,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div
+              style={{
+                maxWidth: "70%",
+                padding: "10px 16px",
+                borderRadius: 18,
+                background: "#e5e7eb",
+                color: "#222",
+                fontSize: 16,
+                fontStyle: "italic",
+                marginRight: 40,
+                opacity: 0.7,
+              }}
+            >
+              AI is typing...
+            </div>
+          </div>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSend();
+        }}
+        style={{
+          display: "flex",
+          gap: 8,
+          padding: 16,
+          borderTop: "1px solid #eee",
+          background: "#fafbfc",
+          borderBottomLeftRadius: 10,
+          borderBottomRightRadius: 10,
+        }}
+      >
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your message..."
+          style={{
+            flex: 1,
+            padding: 10,
+            borderRadius: 18,
+            border: "1px solid #ccc",
+            fontSize: 16,
+          }}
+          disabled={loading}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <button
+          type="submit"
+          disabled={loading || !input.trim()}
+          style={{
+            padding: "0 22px",
+            borderRadius: 18,
+            background: loading || !input.trim() ? "#b3b3b3" : "#0070f3",
+            color: "#fff",
+            border: "none",
+            fontWeight: 600,
+            fontSize: 16,
+            cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+          }}
+        >
+          Send
+        </button>
+      </form>
     </div>
   );
 }
