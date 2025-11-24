@@ -7,34 +7,114 @@ type Message = {
   timestamp?: number;
 };
 
+// Simple function to format message text with basic markdown support
+function formatMessageText(text: string, sender: "user" | "ai"): string {
+  if (sender === "user") {
+    // Don't format user messages
+    return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // Escape HTML first
+  let formatted = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Convert **bold** to <strong>
+  formatted = formatted.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+  // Convert bullet points • to proper list format
+  formatted = formatted.replace(/^• (.+)$/gm, "<div style='margin-left: 16px; margin-top: 4px;'>• $1</div>");
+
+  // Add some spacing between paragraphs (double newlines)
+  formatted = formatted.replace(/\n\n/g, "<br/><br/>");
+
+  // Single newlines
+  formatted = formatted.replace(/\n/g, "<br/>");
+
+  return formatted;
+}
+
 export default function Home() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // On mount, get or create orgId and fetch history first
+  // Assistant ID - you can make this configurable or get from environment
+  const ASSISTANT_ID = "asst_BCf70jDt0jllFYXxW3Ptm56n";
+
+  // On mount, get or create orgId and threadId
   useEffect(() => {
-    let orgId = localStorage.getItem("organizationId");
-    if (!orgId) {
-      orgId = "org-" + Math.random().toString(36).slice(2) + Date.now();
-      localStorage.setItem("organizationId", orgId);
+    let threadIdValue: string | null = null;
+    try {
+      let orgId = localStorage.getItem("organizationId");
+      if (!orgId) {
+        orgId = "org-" + Math.random().toString(36).slice(2) + Date.now();
+        localStorage.setItem("organizationId", orgId);
+      }
+      setOrganizationId(orgId);
+
+      // Get existing threadId or create new one
+      const existingThreadId = localStorage.getItem("threadId");
+      threadIdValue =
+        existingThreadId &&
+        existingThreadId !== "null" &&
+        existingThreadId !== "undefined" &&
+        existingThreadId.trim() !== "" &&
+        existingThreadId.startsWith("thread_")
+          ? existingThreadId
+          : null;
+      setThreadId(threadIdValue);
+    } catch (storageError) {
+      console.warn("Failed to access localStorage:", storageError);
+      // Set defaults if localStorage fails
+      setOrganizationId(
+        "org-" + Math.random().toString(36).slice(2) + Date.now()
+      );
+      setThreadId(null);
+      threadIdValue = null;
     }
-    setOrganizationId(orgId);
+
     setHistoryLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask/history/${orgId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.history)) setMessages(data.history);
-      })
-      .finally(() => setHistoryLoading(false));
+    // Only fetch history if we have a valid threadId
+    if (threadIdValue) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask/history/${threadIdValue}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data.history)) setMessages(data.history);
+        })
+        .catch((error) => {
+          console.warn("Failed to load chat history:", error);
+        })
+        .finally(() => setHistoryLoading(false));
+    } else {
+      // No threadId yet, just show empty chat
+      setHistoryLoading(false);
+    }
   }, []);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  const startNewChat = async () => {
+    setMessages([]);
+    setThreadId(null);
+    try {
+      localStorage.removeItem("threadId");
+      // Create a new thread immediately
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask/thread`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (data.threadId) {
+        setThreadId(data.threadId);
+        localStorage.setItem("threadId", data.threadId);
+      } else {
+        console.warn("Failed to create new thread:", data.error);
+      }
+    } catch (error) {
+      console.warn("Failed to create new thread:", error);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || loading || !organizationId) return;
@@ -46,20 +126,68 @@ export default function Home() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: input, organizationId }),
+        body: JSON.stringify({
+          assistantId: ASSISTANT_ID,
+          message: input,
+          threadId: threadId || null,
+          organizationId,
+        }),
       });
       const data = await res.json();
-      if (Array.isArray(data.history)) {
-        setMessages(data.history);
-      } else {
-        setMessages((msgs) => [
-          ...msgs,
-          { sender: "ai", text: data.answer || JSON.stringify(data) },
-        ]);
+
+      if (data.error) {
+        throw new Error(data.error);
       }
+
+      // Update threadId if it's a new thread or different
+      if (data.threadId) {
+        if (
+          data.threadId !== threadId &&
+          typeof data.threadId === "string" &&
+          data.threadId.startsWith("thread_")
+        ) {
+          setThreadId(data.threadId);
+          try {
+            localStorage.setItem("threadId", data.threadId);
+          } catch (storageError) {
+            console.warn(
+              "Failed to store threadId in localStorage:",
+              storageError
+            );
+          }
+        } else if (data.threadId !== threadId) {
+          console.warn("Invalid threadId format received:", data.threadId);
+        }
+      } else if (threadId && !data.threadId) {
+        // Backend didn't return threadId but we sent one - thread might be invalid
+        console.warn("Thread might be invalid, clearing local session");
+        setThreadId(null);
+        try {
+          localStorage.removeItem("threadId");
+        } catch (storageError) {
+          console.warn(
+            "Failed to clear threadId from localStorage:",
+            storageError
+          );
+        }
+      }
+
+      // Add AI response to messages
+      setMessages((msgs) => [
+        ...msgs,
+        { sender: "ai", text: data.answer || "No response from assistant" },
+      ]);
+
       if (data.organizationId && data.organizationId !== organizationId) {
         setOrganizationId(data.organizationId);
-        localStorage.setItem("organizationId", data.organizationId);
+        try {
+          localStorage.setItem("organizationId", data.organizationId);
+        } catch (storageError) {
+          console.warn(
+            "Failed to store organizationId in localStorage:",
+            storageError
+          );
+        }
       }
     } catch (e) {
       setMessages((msgs) => [
@@ -107,9 +235,40 @@ export default function Home() {
           fontWeight: 600,
           fontSize: 20,
           textAlign: "center",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        Chatbot
+        <span>AI Assistant Chat</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {threadId && (
+            <span
+              style={{
+                fontSize: 12,
+                color: "#666",
+                fontWeight: 400,
+              }}
+            >
+              Session: {threadId.slice(-8)}
+            </span>
+          )}
+          <button
+            onClick={startNewChat}
+            style={{
+              padding: "4px 12px",
+              borderRadius: 6,
+              background: "#0070f3",
+              color: "#fff",
+              border: "none",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            New Chat
+          </button>
+        </div>
       </div>
       <div
         style={{
@@ -145,10 +304,13 @@ export default function Home() {
                 marginLeft: msg.sender === "user" ? 40 : 0,
                 marginRight: msg.sender === "ai" ? 40 : 0,
                 whiteSpace: "pre-wrap",
+                lineHeight: "1.5",
               }}
-            >
-              {msg.text}
-            </div>
+              dangerouslySetInnerHTML={{
+                __html: formatMessageText(msg.text, msg.sender),
+              }}
+            />
+
           </div>
         ))}
         {loading && (
