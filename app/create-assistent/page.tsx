@@ -55,11 +55,10 @@ export default function AssistantManagement() {
   const [trainingSummary, setTrainingSummary] =
     useState<TrainingSummary | null>(null);
 
-  // Form states
+  // Form states (model is fixed to gpt-4o-mini in backend)
   const [formData, setFormData] = useState({
     name: "",
     instructions: "",
-    model: "gpt-4o",
     tools: [] as any[],
   });
 
@@ -129,7 +128,7 @@ export default function AssistantManagement() {
       const data = await res.json();
       if (data.success) {
         alert("Assistant created successfully!");
-        setFormData({ name: "", instructions: "", model: "gpt-4o", tools: [] });
+        setFormData({ name: "", instructions: "", tools: [] });
         setView("list");
         fetchAssistants();
       } else {
@@ -209,7 +208,6 @@ export default function AssistantManagement() {
     setFormData({
       name: assistant.name,
       instructions: assistant.instructions,
-      model: assistant.model,
       tools: assistant.tools,
     });
     setView("edit");
@@ -217,7 +215,7 @@ export default function AssistantManagement() {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ name: "", instructions: "", model: "gpt-4o", tools: [] });
+    setFormData({ name: "", instructions: "", tools: [] });
     setSelectedAssistant(null);
     setWebsiteUrl("");
     setView("list");
@@ -574,36 +572,6 @@ export default function AssistantManagement() {
                   fontWeight: "600",
                 }}
               >
-                Model *
-              </label>
-              <select
-                required
-                value={formData.model}
-                onChange={(e) =>
-                  setFormData({ ...formData, model: e.target.value })
-                }
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "6px",
-                  fontSize: "16px",
-                }}
-              >
-                <option value="gpt-4">GPT-4</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: "20px" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "8px",
-                  fontWeight: "600",
-                }}
-              >
                 Instructions *
               </label>
               <textarea
@@ -744,7 +712,7 @@ export default function AssistantManagement() {
               >
                 MODEL
               </h3>
-              <p style={{ fontSize: "16px" }}>{selectedAssistant.model}</p>
+              <p style={{ fontSize: "16px" }}>gpt-4o-mini (locked for cost optimization)</p>
             </div>
 
             <div style={{ marginBottom: "24px" }}>
