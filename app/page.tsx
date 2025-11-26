@@ -39,10 +39,8 @@ export default function Home() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [assistantId, setAssistantId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-
-  // Assistant ID - you can make this configurable or get from environment
-  const ASSISTANT_ID = "asst_BCf70jDt0jllFYXxW3Ptm56n";
 
   // On mount, get or create orgId and threadId
   useEffect(() => {
@@ -54,6 +52,24 @@ export default function Home() {
         localStorage.setItem("organizationId", orgId);
       }
       setOrganizationId(orgId);
+
+      // Get assistant ID from localStorage
+      const storedAssistantId = localStorage.getItem("assistantId");
+      if (storedAssistantId && storedAssistantId.startsWith("asst_")) {
+        setAssistantId(storedAssistantId);
+      } else {
+        // If no assistant ID stored, fetch the first available assistant
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/assistant`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.assistants && data.assistants.length > 0) {
+              const firstAssistant = data.assistants[0];
+              setAssistantId(firstAssistant.openaiId);
+              localStorage.setItem("assistantId", firstAssistant.openaiId);
+            }
+          })
+          .catch((error) => console.warn("Failed to fetch assistant:", error));
+      }
 
       // Get existing threadId or create new one
       const existingThreadId = localStorage.getItem("threadId");
@@ -117,7 +133,7 @@ export default function Home() {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || loading || !organizationId) return;
+    if (!input.trim() || loading || !organizationId || !assistantId) return;
     const userMsg = { sender: "user" as const, text: input };
     setMessages((msgs) => [...msgs, userMsg]);
     setInput("");
@@ -127,7 +143,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          assistantId: ASSISTANT_ID,
+          assistantId: assistantId,
           message: input,
           threadId: threadId || null,
           organizationId,
@@ -202,10 +218,10 @@ export default function Home() {
     }
   };
 
-  if (historyLoading) {
+  if (historyLoading || !assistantId) {
     return (
       <div style={{ textAlign: "center", marginTop: 80, fontSize: 20 }}>
-        Loading chat history...
+        {historyLoading ? "Loading chat history..." : "Loading assistant..."}
       </div>
     );
   }
