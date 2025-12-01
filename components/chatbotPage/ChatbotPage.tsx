@@ -21,7 +21,10 @@ function formatMessageText(text: string, sender: "user" | "ai"): string {
   formatted = formatted.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 
   // Convert bullet points • to proper list format
-  formatted = formatted.replace(/^• (.+)$/gm, "<div style='margin-left: 16px; margin-top: 4px;'>• $1</div>");
+  formatted = formatted.replace(
+    /^• (.+)$/gm,
+    "<div style='margin-left: 16px; margin-top: 4px;'>• $1</div>"
+  );
 
   // Add some spacing between paragraphs (double newlines)
   formatted = formatted.replace(/\n\n/g, "<br/><br/>");
@@ -32,7 +35,7 @@ function formatMessageText(text: string, sender: "user" | "ai"): string {
   return formatted;
 }
 
-export default function Home() {
+export default function ChatbotPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -326,7 +329,6 @@ export default function Home() {
                 __html: formatMessageText(msg.text, msg.sender),
               }}
             />
-
           </div>
         ))}
         {loading && (
