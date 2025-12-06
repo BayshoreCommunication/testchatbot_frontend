@@ -6,7 +6,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public paths that don't require authentication
-  const publicPaths = ["/", "/sign-in", "/sign-up", "/forget-password"];
+  const publicPaths = [
+    "/",
+    "/sign-in",
+    "/sign-up",
+    "/forget-password",
+    "/create-assistent",
+    "/chatbot",
+  ];
 
   // Static assets and Next.js internal paths
   const excludedPaths = [
@@ -21,7 +28,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow public paths without authentication
+  // Allow public paths without authentication or subscription
   if (publicPaths.includes(pathname)) {
     return NextResponse.next();
   }
@@ -42,7 +49,7 @@ export async function middleware(request: NextRequest) {
 
     // For other protected routes (like /dashboard), check subscription
     if (!session.user.subscription?.isActive) {
-      // Double check with backend before redirecting (to handle stale sessions after payment)
+      // Double check with backend before redirecting
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const response = await fetch(`${apiUrl}/api/user`, {
@@ -65,11 +72,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   } catch (error) {
-    if (error instanceof Error) {
-      console.error("Middleware error:", error.message);
-    } else {
-      console.error("Middleware error:", error);
-    }
+    console.error("Middleware error:", error);
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
