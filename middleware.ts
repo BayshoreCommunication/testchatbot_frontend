@@ -5,22 +5,14 @@ import { auth } from "./auth";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-<<<<<<< HEAD
   // 1. PUBLIC PATHS: Accessible to everyone (Guests + Users)
   // Removed "/start-free-trial" so it forces a login first.
-=======
-  // Public paths that don't require authentication
->>>>>>> 05e847bffaa46c60d6eb4783bf6314aa62c272f8
   const publicPaths = [
     "/",
     "/sign-in",
     "/sign-up",
-<<<<<<< HEAD
     "/start-free-trial",
     "/google",
-=======
-    "/forget-password",
->>>>>>> 05e847bffaa46c60d6eb4783bf6314aa62c272f8
     "/create-assistent",
     "/chatbot",
   ];
@@ -38,7 +30,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-<<<<<<< HEAD
   // --- OAUTH CALLBACK HANDLING ---
   if (pathname === "/auth/callback") {
     try {
@@ -77,10 +68,6 @@ export async function middleware(request: NextRequest) {
       (path) => pathname === path || pathname.startsWith(path + "/")
     )
   ) {
-=======
-  // Allow public paths without authentication or subscription
-  if (publicPaths.includes(pathname)) {
->>>>>>> 05e847bffaa46c60d6eb4783bf6314aa62c272f8
     return NextResponse.next();
   }
 
@@ -103,24 +90,10 @@ export async function middleware(request: NextRequest) {
     "/paymenttest",
   ];
 
-<<<<<<< HEAD
   // Check if current path matches any exempt path
   if (subscriptionExemptPaths.some((path) => pathname.startsWith(path))) {
     return NextResponse.next();
   }
-=======
-    // For other protected routes (like /dashboard), check subscription
-    if (!session.user.subscription?.isActive) {
-      // Double check with backend before redirecting
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const response = await fetch(`${apiUrl}/api/user`, {
-          headers: {
-            Authorization: session.user.accessToken || "",
-          },
-          cache: "no-store",
-        });
->>>>>>> 05e847bffaa46c60d6eb4783bf6314aa62c272f8
 
   // For all other protected paths (like /dashboard), require Active Subscription
   if (!session.user.subscription?.isActive) {
@@ -144,16 +117,8 @@ export async function middleware(request: NextRequest) {
       console.error("Middleware subscription check error:", error);
     }
 
-<<<<<<< HEAD
     // If still no subscription, redirect them to the trial/pricing page instead of home
     return NextResponse.redirect(new URL("/start-free-trial", request.url));
-=======
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-  } catch (error) {
-    console.error("Middleware error:", error);
-    return NextResponse.redirect(new URL("/sign-in", request.url));
->>>>>>> 05e847bffaa46c60d6eb4783bf6314aa62c272f8
   }
 
   return NextResponse.next();
