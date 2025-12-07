@@ -1,204 +1,234 @@
 "use client";
 
+import { credentialLogin, googleAuthLogin } from "@/app/actions/auth";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState, useActionState, useEffect } from "react";
-import { BiBot } from "react-icons/bi";
-import { BsArrowLeftCircle } from "react-icons/bs";
-import { FiEye, FiEyeOff } from "react-icons/fi";
-import { credentialLogin, googleSignUp } from "@/actions/auth";
 import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
+import { BiEnvelope, BiLockAlt, BiLogIn } from "react-icons/bi";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const SigninPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [state, formAction, isPending] = useActionState(credentialLogin, { ok: false, error: "" });
+  const [state, formAction, isPending] = useActionState(credentialLogin, {
+    ok: false,
+    error: "",
+  });
   const router = useRouter();
 
   useEffect(() => {
     if (state.ok) {
-      router.push("/dashboard"); // Redirect to dashboard or home
+      const redirectPath = state.redirectTo || "/dashboard";
+      console.log("✅ [SigninPage] Redirecting to:", redirectPath);
+      router.replace(redirectPath);
     }
-  }, [state.ok, router]);
+  }, [state.ok, state.redirectTo, router]);
 
   const handleGoogleSignin = async () => {
     try {
       setIsGoogleLoading(true);
-      await googleSignUp();
+      await googleAuthLogin();
     } catch (error) {
       console.error("Google signin error:", error);
       setIsGoogleLoading(false);
     }
   };
 
+  // Shared styles
+  const inputWrapperClass = "relative flex items-center";
+  const inputClass =
+    "w-full rounded-xl border border-gray-200 bg-gray-50/50 py-3 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-gray-500 dark:focus:bg-black/40";
+  const iconClass =
+    "absolute left-3.5 h-5 w-5 text-gray-400 dark:text-gray-500";
+
   return (
-    <div className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-gray-50 dark:bg-black">
-      {/* Back Button */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        className="absolute left-4 top-4 z-20"
-      >
-        <Link
-          href="/"
-          className="group flex items-center space-x-2 rounded-full border border-gray-300 bg-white/80 px-4 py-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-gray-900 dark:border-white/10 dark:bg-black/20 dark:text-gray-400 dark:hover:text-white"
-        >
-          <BsArrowLeftCircle className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
-          <span>Back</span>
-        </Link>
-      </motion.div>
-
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        {/* Enhanced gradient background */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-100/40 via-gray-50 to-white dark:from-blue-950/20 dark:via-black dark:to-black" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff,#f1f5f9,#ffffff)] opacity-50 dark:bg-[linear-gradient(to_right,#000000,#0f172a,#000000)]" />
-
-        {/* Animated gradient orbs */}
-        <div className="absolute left-[50%] top-[50%] h-[500px] w-[500px] -translate-x-[50%] -translate-y-[50%] animate-pulse rounded-full bg-blue-300/20 blur-[128px] dark:bg-blue-500/30" />
-        <div className="absolute left-[45%] top-[45%] h-[300px] w-[300px] -translate-x-[50%] -translate-y-[50%] animate-pulse rounded-full bg-indigo-300/15 blur-[128px] delay-700 dark:bg-indigo-500/20" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-50 dark:bg-[#050505]">
+      {/* --- Ambient Background --- */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute left-[20%] top-[20%] h-[400px] w-[400px] rounded-full bg-blue-400/20 blur-[120px] dark:bg-blue-600/10" />
+        <div className="absolute right-[20%] bottom-[20%] h-[400px] w-[400px] rounded-full bg-indigo-400/20 blur-[120px] dark:bg-indigo-600/10" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02] dark:invert" />
       </div>
 
-      {/* Content */}
-      <div className="container relative z-10 mx-auto flex w-full max-w-[380px] flex-col justify-center space-y-6 px-4">
-        <div className="flex flex-col space-y-2 text-center">
-          {/* Logo */}
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.6, type: "spring" }}
-            className="mx-auto flex items-center space-x-2 rounded-full border border-gray-300 bg-white/80 px-4 py-2 backdrop-blur-sm dark:border-white/10 dark:bg-black/20"
-          >
-            <BiBot className="h-6 w-6 text-blue-400" />
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-xl font-bold text-transparent dark:from-blue-400 dark:to-indigo-300">
-              AI Assistant
-            </span>
-          </motion.div>
-
-          {/* Heading */}
-          <motion.h1
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
-          >
-            Welcome back
-          </motion.h1>
-
-          {/* Description */}
-          <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-sm text-gray-600 dark:text-gray-400"
-          >
-            Enter your email to sign in to your account
-          </motion.p>
+      <div className="container relative z-10 mx-auto flex w-full max-w-[420px] flex-col justify-center space-y-6 px-4">
+        {/* --- Header --- */}
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <div className="space-y-1">
+            <motion.h1
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+            >
+              Welcome back
+            </motion.h1>
+            <motion.p
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-sm text-gray-500 dark:text-gray-400"
+            >
+              Enter your credentials to access your account
+            </motion.p>
+          </div>
         </div>
 
-        {/* Form Container */}
+        {/* --- Card --- */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="w-full"
+          transition={{ delay: 0.4 }}
+          className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/70 p-8 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-black/40"
         >
-          <div className="rounded-2xl border border-gray-300 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-black/40">
-            <form action={formAction} className="space-y-6">
-              {/* Email Input */}
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                  htmlFor="email"
-                >
-                  Email
-                </label>
+          <form action={formAction} className="space-y-5">
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                htmlFor="email"
+              >
+                Email
+              </label>
+              <div className={inputWrapperClass}>
+                <BiEnvelope className={iconClass} />
                 <input
                   id="email"
                   name="email"
                   type="email"
                   placeholder="name@example.com"
                   required
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder-gray-500"
+                  className={inputClass}
                 />
               </div>
+            </div>
 
-              {/* Password Input */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label
-                    className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                    htmlFor="password"
-                  >
-                    Password
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    required
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-black/40 dark:text-white dark:placeholder-gray-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                  >
-                    {showPassword ? (
-                      <FiEyeOff className="h-5 w-5" />
-                    ) : (
-                      <FiEye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label
+                  className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                  htmlFor="password"
+                >
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                >
+                  Forgot password?
+                </Link>
               </div>
-
-              {/* Error Message */}
-              {state?.error && (
-                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-500 dark:bg-red-900/20 dark:text-red-400">
-                  {state.error}
-                </div>
-              )}
-
-              {/* Sign In Button */}
-              <button 
-                type="submit" 
-                disabled={isPending}
-                className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 font-medium text-white shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 dark:from-blue-500 dark:to-indigo-500"
-              >
-                {isPending ? "Signing in..." : "Sign In"}
-              </button>
-
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300 dark:border-white/10" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white/80 px-2 text-gray-500 backdrop-blur-xl dark:bg-black/40 dark:text-gray-400">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              {/* Google Sign In Button */}
-              <div>
+              <div className={inputWrapperClass}>
+                <BiLockAlt className={iconClass} />
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  required
+                  className={inputClass}
+                />
                 <button
                   type="button"
-                  onClick={handleGoogleSignin}
-                  disabled={isGoogleLoading}
-                  className="flex w-full items-center justify-center space-x-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-100 active:scale-[0.98] disabled:opacity-50 dark:border-white/10 dark:bg-black/40 dark:text-gray-300 dark:hover:bg-black/20"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 text-gray-400 hover:text-blue-500 transition-colors"
                 >
+                  {showPassword ? (
+                    <FiEyeOff className="h-5 w-5" />
+                  ) : (
+                    <FiEye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Status Messages */}
+            {(state?.error || state?.ok) && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium ${
+                  state.error
+                    ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+                    : "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                }`}
+              >
+                {state.error || "Login successful! Redirecting..."}
+              </motion.div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isPending}
+              className="mt-2 w-full transform rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-blue-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isPending ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Signing in...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  Sign In <BiLogIn className="h-5 w-5" />
+                </span>
+              )}
+            </button>
+
+            {/* Divider */}
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200 dark:border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500 dark:bg-black dark:text-gray-400">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            {/* Google Button */}
+            <button
+              type="button"
+              onClick={handleGoogleSignin}
+              disabled={isGoogleLoading}
+              className="group flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 font-medium text-gray-700 transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-white/10 dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10"
+            >
+              {isGoogleLoading ? (
+                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              ) : (
+                <>
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path
                       fill="currentColor"
@@ -217,27 +247,23 @@ const SigninPage = () => {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  <span>{isGoogleLoading ? "Signing in..." : "Google"}</span>
-                </button>
-              </div>
-            </form>
+                  <span>Google</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Footer Link */}
+          <div className="mt-8 text-center text-sm">
+            <span className="text-gray-500 dark:text-gray-400">New here? </span>
+            <Link
+              href="/sign-up"
+              className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+            >
+              Create an account
+            </Link>
           </div>
         </motion.div>
-
-        {/* Sign Up Link */}
-        <motion.p
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="text-center text-sm text-gray-600 dark:text-gray-400"
-        >
-          <Link
-            href="/sign-up"
-            className="text-blue-600 underline underline-offset-4 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Don&apos;t have an account? Sign Up
-          </Link>
-        </motion.p>
       </div>
     </div>
   );

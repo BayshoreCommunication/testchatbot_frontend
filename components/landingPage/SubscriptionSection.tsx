@@ -1,7 +1,7 @@
 "use client";
 
-import { createSubscriptionCheckoutSession } from "@/actions/subscriptions";
-import { pricingPlans, PricingPlan } from "@/config/pricing";
+import { createSubscriptionCheckoutSession } from "@/app/actions/subscriptions";
+import { PricingPlan, pricingPlans } from "@/config/pricing";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -67,7 +67,10 @@ const SubscriptionSection = ({
   };
 
   return (
-    <section id="pricing" className="relative overflow-hidden bg-white pb-32 dark:bg-black">
+    <section
+      id="pricing"
+      className="relative overflow-hidden bg-white pb-32 dark:bg-black"
+    >
       <div className="absolute inset-0 bg-gradient-to-b from-gray-50 via-white to-gray-50 opacity-50 dark:from-gray-900 dark:via-black dark:to-black" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -153,9 +156,7 @@ const SubscriptionSection = ({
                 )}
                 <span
                   className={`relative z-10 ${
-                    isYearly
-                      ? "text-white"
-                      : "text-gray-600 dark:text-gray-400"
+                    isYearly ? "text-white" : "text-gray-600 dark:text-gray-400"
                   }`}
                 >
                   Yearly

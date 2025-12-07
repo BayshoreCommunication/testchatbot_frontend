@@ -1,9 +1,11 @@
-import React from 'react'
+import LeadsDetailsView from "@/components/leads/LeadsDetailsView";
 
 const page = () => {
   return (
-    <div>page</div>
-  )
-}
+    <div>
+      <LeadsDetailsView />
+    </div>
+  );
+};
 
-export default page
+export default page;

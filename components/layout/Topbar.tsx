@@ -1,7 +1,7 @@
 "use client";
 
-import { userLogOut } from "@/actions/auth";
-import { getUserData } from "@/actions/user";
+import { userLogOut } from "@/app/actions/auth";
+import { getUserData } from "@/app/actions/user";
 import { useSidebarContext } from "@/lib/SidebarContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

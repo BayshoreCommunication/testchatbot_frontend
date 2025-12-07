@@ -72,7 +72,7 @@ const Sidebar = () => {
                 <button
                   onClick={() => isExpanded && toggleSubMenu(item.id)}
                   className={cn(
-                    "group relative flex w-full items-center gap-3 rounded-xl transition-all",
+                    "group relative flex w-full items-center gap-3 rounded transition-all",
                     isExpanded ? "px-4 py-3" : "justify-center p-3",
                     isActive
                       ? "bg-gray-100 text-gray-900"
@@ -120,7 +120,7 @@ const Sidebar = () => {
                 <Link
                   href={item.href}
                   className={cn(
-                    "group relative flex items-center gap-3 rounded-xl transition-all",
+                    "group relative flex items-center gap-3 rounded transition-all",
                     isExpanded ? "px-4 py-3" : "justify-center p-3",
                     isActive
                       ? "bg-gray-100 text-gray-900"
@@ -169,7 +169,7 @@ const Sidebar = () => {
                       key={subItem.id}
                       href={subItem.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                        "flex items-center gap-3 rounded px-3 py-2 text-sm transition-all",
                         isSubItemActive(subItem.href)
                           ? "bg-gray-100 text-gray-900 font-medium"
                           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"

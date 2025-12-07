@@ -49,7 +49,6 @@ const activeUsers = [
   { id: 3, name: "Mike Johnson", initials: "MJ", active: false },
   { id: 4, name: "Sarah Wilson", initials: "SW", active: true },
   { id: 5, name: "David Brown", initials: "DB", active: true },
-  { id: 5, name: "David Brown", initials: "DB", active: true },
 ];
 
 const RightNotification = () => {
