@@ -85,7 +85,19 @@ const ChatbotRightSideView = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId] = useState(() => "test_session_721457542591636141");
+  // Persistent sessionId using localStorage
+  const [sessionId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem("chatbot_session_id");
+      if (stored) return stored;
+      // Generate a new session id (timestamp + random)
+      const newId = `session_${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
+      window.localStorage.setItem("chatbot_session_id", newId);
+      return newId;
+    }
+    // Fallback for SSR (shouldn't happen in browser)
+    return `session_${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
+  });
 
   // Ref for the scrollable container (the div with overflow-y-auto)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
