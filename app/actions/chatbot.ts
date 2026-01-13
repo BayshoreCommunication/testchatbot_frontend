@@ -27,7 +27,7 @@ export async function askChatbot(
   // Use provided API key or fallback to default for testing
   // TODO: Make this dynamic based on user's organization
   const organizationApiKey =
-    apiKey || "org_sk_3ca4feb8c1afe80f73e1a40256d48e7c";
+    apiKey || "org_sk_fdcc08c7a55be76b7a7f259cee6dfacf";
 
   try {
     const response = await fetch(`${apiUrl}/api/chatbot/ask-langgraph`, {
